@@ -6,14 +6,21 @@
 </head>
 <body>
 
-<button id='updateSource' onclick="sourceUpdate('depA')">Update Source</button>
+<div id="react"></div>
+
+<button id="updateSource" onclick="sourceUpdate('Hello')">Update Source</button>
 
 <script src="bower_components/traceur/traceur.min.js"></script>
 <script src="bower_components/es6-module-loader/dist/es6-module-loader.js"></script>
 <script src="bower_components/system.js/dist/system.js"></script>
+<script src="bower_components/react/react.js"></script>
+
 <script>
     System.config({
-        baseURL: '/src/'
+        baseURL: '/src/',
+        paths: {
+            'react': '/bower_components/react/react.js'
+        }
     });
 
     var fetchCache = {};
@@ -70,6 +77,14 @@
                 //todo: if !source then run through traceur b/c it's es6...
                 instantiated.then(function(updatedModule) {
                     newDep = updatedModule.execute().default;
+
+                    //todo: pass state from dep to newDep...
+                    var container = document.getElementById('react');
+                    React.render(
+                        React.createElement(newDep, { name: 'World'}),
+                        container
+                    );
+
                     console.log('newDep:', newDep);
                 });
 
