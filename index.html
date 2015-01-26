@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <title>Hot Demo</title>
+</head>
+<body>
+
+<button id='updateSource' onclick="sourceUpdate('depA')">Update Source</button>
+
+<script src="bower_components/traceur/traceur.min.js"></script>
+<script src="bower_components/es6-module-loader/dist/es6-module-loader.js"></script>
+<script src="bower_components/system.js/dist/system.js"></script>
+<script>
+    System.config({
+        baseURL: '/src/'
+    });
+
+    var fetchCache = {};
+    var translateCache = {};
+
+    var systemLocate = System.locate;
+    System.locate = function(load) {
+        //console.log('locate', load);
+        var System = this;
+        return systemLocate.call(this, load);
+    }
+
+    var systemTranslate = System.translate;
+    System.translate = function(load) {
+        //console.log('translate', load);
+        translateCache[load.name] = load;
+        return systemTranslate.call(this, load);
+    }
+
+    var systemFetch = System.fetch;
+    System.fetch = function(load) {
+        //console.log('fetch', load);
+        fetchCache[load.name] = load;
+        return systemFetch.call(this, load);
+    }
+    System.cacheBust = '?bust=' + Date.now();
+
+    var systemInstantiate = System.instantiate;
+    System.instantiate = function(load) {
+        //console.log('instantiate', load);
+        return systemInstantiate.call(this, load);
+        //return systemInstantiate(load);
+    }
+
+
+    // when module A is updated:
+    //   re-fetch the resource
+    //   re-translate
+    //   re-instantiate
+    //
+    function sourceUpdate(dep) {
+        console.log('updating source', dep);
+        var load = fetchCache[dep];
+        var fetched = systemFetch.call(System, load);
+        //todo: refectch dependencies...
+
+        fetched.then(function(source) {
+            var load = translateCache[dep];
+            load.source = source;
+            var translated = systemTranslate.call(System, load);
+
+            translated.then(function(source) {
+                var instantiated = systemInstantiate.call(System, load);
+                //todo: if !source then run through traceur b/c it's es6...
+                instantiated.then(function(updatedModule) {
+                    newDep = updatedModule.execute().default;
+                    console.log('newDep:', newDep);
+                });
+
+            });
+
+        });
+
+
+
+    }
+
+
+    System.import('app').then(function(m) {
+        console.log('loaded', m);
+    });
+</script>
+</body>
+</html>
