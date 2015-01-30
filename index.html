@@ -46,12 +46,15 @@
         fetchCache[load.name] = load;
         return systemFetch.call(this, load);
     }
-    System.cacheBust = '?bust=' + Date.now();
 
     var systemInstantiate = System.instantiate;
     System.instantiate = function(load) {
         //console.log('instantiate', load);
-        return systemInstantiate.call(this, load);
+        var instantiated = systemInstantiate.call(this, load);
+        instantiated.then(function() {
+           //debugger;
+        });
+        return instantiated;
         //return systemInstantiate(load);
     }
 
@@ -78,22 +81,23 @@
                 instantiated.then(function(updatedModule) {
                     newDep = updatedModule.execute().default;
 
-                    //todo: pass state from dep to newDep...
-                    var container = document.getElementById('react');
-                    React.render(
-                        React.createElement(newDep, { name: 'World'}),
-                        container
-                    );
-
-                    console.log('newDep:', newDep);
+                    onNewModule(dep, newDep);
                 });
 
             });
 
         });
+    }
 
+    function onNewModule(oldModule, newModule) {
+        var container = document.getElementById('react');
+        //todo: pass state and props from dep to newDep...
+        React.render(
+            React.createElement(newDep, { name: 'World'}),
+            container
+        );
 
-
+        console.log('newDep:', newDep);
     }
 
 
